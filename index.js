@@ -8,13 +8,14 @@ const selectedText = document.getElementById("selectedText"),
   dropdownMenu = document.getElementById("dropdownMenu"),
   dropdownButton = document.getElementById("dropdownButton"),
   options = dropdownMenu.querySelectorAll("li")
-
+const menuItems = Array.from(options)
 const copyModal = document.getElementById("copyModal")
 
 const htmlElement = document.documentElement,
   lightModeBtn = document.getElementById('light-mode-btn'),
   darkModeBtn = document.getElementById('dark-mode-btn')
 
+let focusedIndex = -1
 
 document.addEventListener("DOMContentLoaded", function () {
   getThemes("567c8d","monochrome-light")
@@ -61,26 +62,59 @@ function getThemes(colorOption,modeOption){
 }  
 
 dropdownButton.addEventListener("click", function () {
+  const isExpanded = dropdownButton.getAttribute("aria-expanded") === "true"
+    dropdownButton.setAttribute("aria-expanded", !isExpanded)
   dropdownMenu.classList.toggle("hidden")
-  })
-options.forEach(option => {
-  option.addEventListener("click", function () {
-  selectedText.textContent = this.textContent; 
-  document.querySelectorAll(".checkmark").forEach(icon => icon.classList.add("hidden"));
-  document.querySelectorAll("li").forEach(icon => icon.classList.remove("font-bold"));
-
-  this.querySelector(".checkmark").classList.remove("hidden")
-  this.classList.add("font-bold")
-  dropdownMenu.classList.add("hidden");
-    })
+  if (!dropdownMenu.classList.contains("hidden")) {
+    focusedIndex = 0;
+    menuItems[focusedIndex].focus()  
+  }
+  else{
+    dropdownButton.focus()
+  }
 })
 
+dropdownButton.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" || event.key === " ") {
+        dropdownButton.click()
+    }
+})
+
+dropdownMenu.addEventListener("keydown", function (event) {
+  if (event.key === "ArrowDown") {
+      event.preventDefault()
+      focusedIndex = (focusedIndex + 1) % menuItems.length;
+      menuItems[focusedIndex].focus();
+  } else if (event.key === "ArrowUp") {
+      event.preventDefault()
+      focusedIndex = (focusedIndex - 1 + menuItems.length) % menuItems.length;
+      menuItems[focusedIndex].focus();
+  } else if (event.key === "Escape") {
+      dropdownButton.setAttribute("aria-expanded", "false");
+      dropdownMenu.classList.add("hidden");
+      dropdownButton.focus()
+  }
+})
+options.forEach(option => {
+  
+  option.addEventListener("click", function () {
+    selectedText.textContent = this.textContent; 
+    document.querySelectorAll(".checkmark").forEach(icon => icon.classList.add("hidden"))
+      document.querySelectorAll("li").forEach(icon =>         
+      icon.classList.remove("font-bold"))
+      this.querySelector(".checkmark").classList.remove("hidden")
+      this.classList.add("font-bold")
+      dropdownMenu.classList.add("hidden");
+    })
+})
 document.addEventListener("click", function (event) {
   if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+    dropdownButton.setAttribute("aria-expanded", "false");
     dropdownMenu.classList.add("hidden")
+    dropdownButton.focus()
+
   }
   if(event.target.closest(".color-div")||event.target.closest(".name-div")){
-    console.log(event.target.id)
     navigator.clipboard.writeText(event.target.id).then(() => {
       copyModal.classList.remove("hidden")
       setTimeout(() => {
